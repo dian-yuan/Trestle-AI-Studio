@@ -35,7 +35,7 @@ APP = Path(__file__).resolve().parent
 APP_NAME = "Trestle"
 APP_ID = "Changji"          # 运行态目录用 ASCII 名
 APP_SUB = "AI 视频工程台"
-VERSION = "1.0.0-beta.4"
+VERSION = "1.0.0-beta.5"
 
 CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
 EDGE = [
