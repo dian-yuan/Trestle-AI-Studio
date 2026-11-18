@@ -1,0 +1,33 @@
+# 文本统一 LF，避免 Windows / macOS 来回改动整行
+* text=auto eol=lf
+
+# 图像与视频按二进制处理，git 不做换行转换、不显示行级 diff
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.tif binary
+*.tiff binary
+*.psd binary
+*.ai binary
+*.fig binary
+*.blend binary
+*.glb binary
+*.mp4 binary
+*.mov binary
+*.mkv binary
+*.wav binary
+*.mp3 binary
+*.m4a binary
+*.aac binary
+
+# glTF 的 JSON 部分仍是文本
+*.gltf text eol=lf
+
+# 生成物：d board sync / d script 重写，不要手改
+units/*/production/**/shots.json linguist-generated=true
+units/*/production/**/scene.json linguist-generated=true
+units/*/production/index.json linguist-generated=true
+units/*/script/derived/** linguist-generated=true
+units/*/segments/**/shots.json linguist-generated=true
+assets/*/*/build/canvases.json linguist-generated=true

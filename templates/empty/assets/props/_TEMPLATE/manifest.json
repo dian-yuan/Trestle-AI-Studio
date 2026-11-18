@@ -1,0 +1,13 @@
+{
+  "id": "PR-XX-01",
+  "name": "（道具名）",
+  "type": "props",
+  "status": "草稿",
+  "dims": {"w": 0.0, "h": 0.0, "d": 0.0, "unit": "m"},
+  "material": "（材质）",
+  "wear": "（使用痕迹，越具体越可信）",
+  "source": "（实物来源 / 采购 / 参考图路径）",
+  "files": {},
+  "used_by": [],
+  "notes": ""
+}

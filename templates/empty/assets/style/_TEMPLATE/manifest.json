@@ -1,0 +1,12 @@
+{
+  "id": "ST-XX-01",
+  "name": "（风格资产名）",
+  "type": "style",
+  "status": "草稿",
+  "palette": [{"name": "（色名）", "hex": "#000000", "usage": "（用在哪、面积上限）"}],
+  "light": {"ratio": "", "kelvin": "", "notes": ""},
+  "lens": {"filters": [], "notes": ""},
+  "files": {},
+  "used_by": [],
+  "notes": ""
+}

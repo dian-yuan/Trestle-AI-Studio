@@ -1,0 +1,20 @@
+{
+  "unit": "S1-E01",
+  "title": "",
+  "version": "v0",
+  "status": "未开始",
+  "duration_sec": 0,
+  "aspect": "16:9",
+  "resolution": "1920x1080",
+  "platforms": [
+    "douyin",
+    "bilibili"
+  ],
+  "files": {
+    "final": "final/E01-final.mp4",
+    "subtitles": "final/E01-final.srt",
+    "poster": "final/E01-poster.jpg",
+    "audio": "final/audio-mix.wav"
+  },
+  "published": []
+}

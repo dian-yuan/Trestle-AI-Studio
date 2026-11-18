@@ -1,0 +1,1239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trestle</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='54' fill='%230D0D0D'/%3E%3Cpath fill='%23FFFFFF' d='M34 45H206V77H154L159 195H81L86 77H34Z'/%3E%3C/svg%3E">
+<style>
+  :root{
+    color-scheme:dark;
+    --ground:#0b0d12; --surface:#141821; --raised:#1b2230;
+    --border:#262b36; --rule:#1f242e; --text:#e8ebf2;
+    --muted:#a9b0c0; --faint:#788296; --accent:#7aa2ff;
+    --positive:#63e6a5; --negative:#ff6b5e; --warning:#ffcc66;
+    --primary-bg:#3f62d8; --primary-ink:#fff; --primary-hover:#4a6ee0;
+    --radius:8px;
+    --font:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--ground);color:var(--text);
+    font-family:var(--font);font-size:13px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  input{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  header{
+    flex:none;display:flex;align-items:center;gap:14px;
+    height:64px;padding:0 28px;border-bottom:1px solid var(--border);
+  }
+  .mark{flex:none;width:30px;height:30px}
+  .brand{display:flex;flex-direction:column;line-height:1.25}
+  .brand b{font-size:17px;letter-spacing:.08em;font-weight:600}
+  .brand span{font-size:11px;color:var(--faint);letter-spacing:.12em}
+  .brand-stack{display:flex;flex-direction:column;line-height:1.2;gap:3px}
+  .brand-lockup{height:22px;width:auto;color:var(--text)}
+  .brand-lockup path{fill:currentColor}
+  .brand-stack span{font-size:11px;color:var(--faint);letter-spacing:.12em}
+  header .grow{flex:1}
+  header .meta{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  header .quit{
+    margin-left:6px;padding:6px 12px;border-radius:var(--radius);
+    color:var(--muted);border:1px solid transparent;
+  }
+  header .quit:hover{border-color:var(--border);color:var(--text)}
+
+  /* ---------- 更新 ---------- */
+  .update{
+    flex:none;display:flex;align-items:center;gap:10px;
+    padding:9px 28px;background:#18232f;border-bottom:1px solid #26384d;
+    font-size:12.5px;color:#cfe3ff;
+  }
+  .update[hidden]{display:none}
+  .update .dot{
+    width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 3px #1d3350;
+  }
+  .update b{font-family:var(--mono);font-weight:600;color:#eaf3ff}
+  .update .note{
+    color:#8fa8c4;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;max-width:46ch;
+  }
+  .update .grow{flex:1}
+  .update button{
+    padding:5px 12px;border-radius:var(--radius);
+    border:1px solid #2f4a68;color:#dbeafe;font-size:12px;
+  }
+  .update button:hover{background:#1f3044;border-color:#3d5f83}
+  .update button.ghost{border-color:transparent;color:#8fa8c4}
+  .update button.ghost:hover{color:#dbeafe}
+
+  main{
+    flex:1;min-height:0;display:grid;
+    grid-template-columns:minmax(0,1fr) 320px;gap:0;
+  }
+
+  /* ---------- 最近 ---------- */
+  .recent{min-width:0;display:flex;flex-direction:column;padding:26px 28px 0}
+  .sec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .sec-head h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.04em}
+  .sec-head .n{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .rows{flex:1;min-height:0;overflow:auto;padding-bottom:20px}
+  .rows:empty{flex:0;overflow:visible;padding:0}
+  .rows::-webkit-scrollbar{width:10px}
+  .rows::-webkit-scrollbar-thumb{background:#303036;border-radius:10px;
+    border:3px solid var(--ground)}
+
+  .row{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;
+    align-items:center;padding:12px 14px;border-radius:var(--radius);
+    border-left:1px solid transparent;cursor:pointer;position:relative;
+  }
+  .row:hover,.row:focus-visible{background:var(--raised);border-left-color:var(--accent)}
+  .row .name{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .row .name .dot{width:6px;height:6px;border-radius:50%;background:var(--positive);
+    flex:none;display:none}
+  .row.up .name .dot{display:block}
+  .row .path{
+    grid-column:1;font-family:var(--mono);font-size:11px;color:var(--faint);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-top:-4px;
+  }
+  .row .stat{
+    grid-column:2;grid-row:1;font-family:var(--mono);font-size:11px;
+    color:var(--muted);white-space:nowrap;
+  }
+  .row .acts{
+    grid-column:2;grid-row:2;justify-self:end;display:flex;
+    align-items:center;gap:4px;
+  }
+  .row .wb{
+    height:22px;padding:0 8px;border-radius:4px;color:var(--faint);
+    border:1px solid var(--border);font-size:10.5px;letter-spacing:.04em;
+    opacity:0;transition:opacity .12s,color .12s,border-color .12s;
+  }
+  .row:hover .wb,.row:focus-within .wb{opacity:1}
+  .row .wb:hover{background:#24242a;color:var(--text);border-color:var(--border-strong)}
+  .row .more{
+    width:26px;height:22px;border-radius:4px;color:var(--faint);
+    opacity:0;line-height:20px;
+  }
+  .row:hover .more,.row:focus-within .more{opacity:1}
+  .row .more:hover{background:#24242a;color:var(--text)}
+
+  .empty{
+    flex:1;min-height:0;overflow:auto;
+    display:flex;flex-direction:column;justify-content:flex-start;
+    align-items:flex-start;gap:14px;padding:2px 0 40px;
+  }
+  .empty[hidden]{display:none}
+  .empty h3{margin:0;font-size:15px;font-weight:600}
+  .empty p{margin:0;color:var(--faint);font-size:12.5px;max-width:38em}
+
+  /* ---------- 第一次用 ---------- */
+  .onb-intro{
+    width:100%;max-width:680px;box-sizing:border-box;
+    border:1px solid #2f4a68;background:#18232f;border-radius:10px;
+    padding:18px 20px;
+  }
+  .onb-intro .k{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:#8fa8c4;margin-bottom:9px;
+  }
+  .onb-intro h3{margin:0 0 8px;font-size:17px;font-weight:600}
+  .onb-intro p{margin:0;color:#cfe3ff;font-size:12.5px;line-height:1.75;max-width:62ch}
+  .onb-intro .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+  .onb-intro .btn{
+    height:34px;padding:0 14px;font-size:12.5px;
+    border-color:#2f4a68;background:#1f3044;color:#dbeafe;
+  }
+  .onb-intro .btn:hover{background:#263a52;border-color:#3d5f83}
+  .onb-intro .btn.primary{background:#dbeafe;border-color:#dbeafe;color:#0d1620}
+  .onb-intro .btn.primary:hover{background:#eef6ff;border-color:#eef6ff}
+  .role-line{
+    display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+    margin-top:13px;padding-top:12px;border-top:1px solid #26384d;
+    font-size:12px;color:#cfe3ff;
+  }
+  .role-line b{font-weight:600}
+  .role-line i{font-style:normal;color:#8fa8c4}
+  .role-line .arr{color:#6f8bab}
+  .two-paths{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:680px}
+  .path-card{
+    text-align:left;border:1px solid var(--border);border-radius:8px;
+    padding:13px 15px;background:var(--surface);
+    transition:border-color .12s,background .12s;
+  }
+  .path-card:hover{border-color:#3a3a41;background:var(--raised)}
+  .path-card b{display:block;font-size:13px;margin-bottom:3px}
+  .path-card span{display:block;font-size:11.5px;color:var(--faint);line-height:1.55}
+  .path-card .badge{
+    display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--accent);
+    border:1px solid #2d4a6b;border-radius:999px;padding:0 7px;margin-bottom:7px;
+  }
+  .tpl-badge{
+    display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--accent);
+    border:1px solid #2d4a6b;border-radius:999px;padding:0 6px;
+    margin-left:6px;vertical-align:1px;
+  }
+
+  /* ---------- 3 分钟看懂 ---------- */
+  .onb-dlg{width:min(720px,calc(100vw - 64px))}
+  .onb-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin:2px 0 14px}
+  .onb-col{position:relative;padding:0 18px}
+  .onb-col:first-child{padding-left:0}
+  .onb-col + .onb-col::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--rule);
+  }
+  .onb-col h4{margin:0;font-size:13px;font-weight:600}
+  .onb-col .who{
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint);
+    margin:2px 0 8px;
+  }
+  .onb-col ul{margin:0;padding:0;list-style:none}
+  .onb-col li{font-size:11.5px;line-height:1.65;color:var(--muted)}
+  .onb-chain{
+    padding:12px 14px;border:1px solid var(--border);border-radius:7px;
+    background:var(--ground);margin-bottom:4px;
+  }
+  .onb-chain .lab{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--faint);margin-bottom:5px;
+  }
+  .onb-chain .row{
+    display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+    font-size:11px;color:var(--muted);
+  }
+  .onb-chain .row + .row{margin-top:5px}
+  .onb-chain .row em{font-style:normal;color:#4b4b53}
+  .onb-chain .row b{font-weight:500;color:var(--text)}
+
+  /* ---------- 动作 ---------- */
+  .actions{
+    border-left:1px solid var(--border);background:var(--surface);
+    padding:26px 24px;display:flex;flex-direction:column;gap:10px;
+  }
+  .actions h2{margin:0 0 6px;font-size:13px;font-weight:600;letter-spacing:.04em}
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    height:42px;border-radius:var(--radius);border:1px solid var(--border);
+    color:var(--text);font-size:13px;transition:background .12s,border-color .12s;
+  }
+  .btn:hover{border-color:var(--border-strong);background:var(--raised)}
+  .btn.primary{
+    background:var(--primary-bg);color:var(--primary-ink);
+    border-color:var(--primary-bg);font-weight:600;
+  }
+  .btn.primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+  .sep{height:1px;background:var(--rule);margin:12px 0 4px}
+  .field-label{font-size:11px;color:var(--faint);letter-spacing:.04em;margin-top:2px}
+  .pathline{
+    display:flex;gap:6px;
+  }
+  .pathline input{
+    flex:1;min-width:0;height:32px;padding:0 10px;border-radius:var(--radius);
+    background:var(--ground);border:1px solid var(--border);font-size:12px;
+    font-family:var(--mono);
+  }
+  .pathline input::placeholder{color:#5f6167}
+  .pathline button{
+    flex:none;padding:0 12px;height:32px;border-radius:var(--radius);
+    border:1px solid var(--border);color:var(--muted);font-size:12px;
+  }
+  .pathline button:hover{border-color:var(--border-strong);color:var(--text)}
+  .tip{margin:6px 0 0;font-size:11.5px;color:var(--faint);line-height:1.65}
+  .actions .grow{flex:1}
+
+  /* ---------- 环境检查 ---------- */
+  .envbox{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule)}
+  .env-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;
+    font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+  .env-head .grow{flex:1}
+  .env-head button{padding:3px 8px;border-radius:6px;border:1px solid var(--border);
+    color:var(--muted);font-size:11px}
+  .env-head button:hover{border-color:var(--border-strong);color:var(--text)}
+  .env-row{display:flex;align-items:center;gap:7px;padding:3px 0;
+    font-size:11.5px;color:var(--faint)}
+  .env-row i{width:6px;height:6px;border-radius:50%;background:var(--faint);
+    flex:none}
+  .env-row.ok i{background:var(--positive)}
+  .env-row.warn i{background:var(--warning)}
+  .env-row.bad i{background:var(--negative)}
+  .env-row b{margin-left:auto;font-weight:400;color:var(--muted);
+    max-width:16ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .env-row.bad b{color:var(--warning)}
+  .env-dlg{width:min(560px,calc(100vw - 48px))}
+  .env-dlg .env-list{padding:2px 0 8px}
+  .env-dlg .env-row{padding:7px 0;border-bottom:1px solid var(--rule);
+    font-size:12.5px}
+  .env-dlg .env-row:last-child{border-bottom:0}
+  .env-dlg .env-row b{color:var(--text);max-width:24ch}
+  .env-dlg .env-row.warn i{background:var(--warning)}
+
+  /* ---------- 状态 ---------- */
+  footer{
+    flex:none;display:flex;align-items:center;gap:14px;height:38px;
+    padding:0 28px;border-top:1px solid var(--border);
+    font-size:11px;color:var(--faint);
+  }
+  .pill{display:inline-flex;align-items:center;gap:5px}
+  .pill i{width:5px;height:5px;border-radius:50%;background:var(--faint);
+    display:inline-block}
+  .pill.on i{background:var(--positive)}
+  .pill.off i{background:var(--negative)}
+  footer .grow{flex:1}
+
+  /* ---------- 覆盖层 ---------- */
+  .veil{
+    position:fixed;inset:0;background:rgba(9,9,11,.72);backdrop-filter:blur(2px);
+    display:none;align-items:center;justify-content:center;z-index:50;
+  }
+  .veil.on{display:flex}
+  .veil .box{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .spin{
+    width:22px;height:22px;border-radius:50%;
+    border:2px solid var(--border-strong);border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .veil p{margin:0;color:var(--muted);font-size:12.5px}
+
+  /* ---------- 弹窗 ---------- */
+  dialog{
+    width:min(520px,calc(100vw - 64px));padding:0;border:1px solid var(--border);
+    border-radius:8px;background:var(--surface);color:var(--text);
+    box-shadow:0 18px 48px rgba(0,0,0,.55);
+  }
+  dialog::backdrop{background:rgba(9,9,11,.6)}
+  .dlg-head{padding:20px 22px 0}
+  .dlg-head h3{margin:0;font-size:15px;font-weight:600}
+  .dlg-head p{margin:6px 0 0;font-size:12px;color:var(--faint);line-height:1.6}
+  .dlg-body{padding:18px 22px 4px;display:flex;flex-direction:column;gap:14px}
+  .dlg-foot{
+    display:flex;justify-content:flex-end;gap:8px;padding:18px 22px 20px;
+  }
+  .dlg-foot .btn{height:34px;padding:0 18px;flex:none;font-size:12.5px}
+  label.f{display:flex;flex-direction:column;gap:6px}
+  label.f > span{font-size:11.5px;color:var(--muted)}
+  label.f input{
+    height:34px;padding:0 10px;border-radius:var(--radius);
+    background:var(--ground);border:1px solid var(--border);
+  }
+  label.f input:focus{border-color:var(--accent);outline:none}
+  .row2{display:flex;gap:8px}
+  .row2 input{flex:1;min-width:0}
+  .row2 button{
+    flex:none;padding:0 12px;height:34px;border-radius:var(--radius);
+    border:1px solid var(--border);color:var(--muted);font-size:12px;
+  }
+  .row2 button:hover{border-color:var(--border-strong);color:var(--text)}
+  .tpls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tpl{
+    text-align:left;padding:11px 12px;border-radius:var(--radius);
+    border:1px solid var(--border);background:var(--ground);
+  }
+  .tpl b{display:block;font-size:12.5px;font-weight:600}
+  .tpl em{display:block;font-style:normal;font-size:11px;color:var(--faint);margin-top:3px}
+  .tpl.on{border-color:var(--accent);background:#18232f}
+  .chk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .chk input{accent-color:var(--accent)}
+  .err{
+    margin:0;padding:11px 12px;border-radius:var(--radius);
+    background:#2c1a20;color:#f0a8b6;font-size:12px;line-height:1.65;
+  }
+  .err.soft{background:#2a2416;color:#e8c98a}
+  /* hidden 必须真的隐藏：作者样式的 display 会盖掉 UA 的 [hidden] */
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-stack">
+    <svg class="brand-lockup" viewBox="0 0 243.425 51.24" role="img"
+      aria-label="Trestle">
+      <g transform="translate(0,4.62) scale(0.175)">
+        <path fill="currentColor"
+          d="M34 45H206V77H154L159 195H81L86 77H34Z"/>
+      </g>
+      <g transform="translate(61.8,40.62) scale(0.41666666666666674)">
+        <path fill="currentColor"
+          d="M18.41 0V-65.19H29.74V0ZM-1.37 -60.16V-71H49.51V-60.16Z M67.28 -29.44V-40.28H91.69Q95.55 -40.28 97.88 -43.02Q100.22 -45.75 100.24 -50.24Q100.24 -54.74 97.9 -57.47Q95.57 -60.21 91.69 -60.21H67.28V-71.04H91.89Q97.97 -71.04 102.52 -68.45Q107.07 -65.86 109.59 -61.19Q112.1 -56.52 112.1 -50.24Q112.1 -43.99 109.56 -39.31Q107.03 -34.63 102.5 -32.04Q97.97 -29.44 91.89 -29.44ZM62.54 0V-71.04H73.87V0ZM101.51 0 84.86 -31.64 96.53 -33.89 115.08 0Z M133.73 0V-71H145.06V0ZM138.56 0V-10.84H180.12V0ZM138.56 -29.83V-40.67H174.74V-29.83ZM138.56 -60.16V-71H180.12V-60.16Z M221.22 0.73Q216.09 0.73 211.4 -0.26Q206.72 -1.26 202.63 -3.22Q198.55 -5.19 195.1 -8.06L201.3 -17.04Q205.37 -13.58 210.45 -11.8Q215.53 -10.01 221.22 -10.01Q228.47 -10.01 232.46 -12.63Q236.46 -15.24 236.46 -19.97V-20.02Q236.46 -23.68 234.45 -25.63Q232.43 -27.57 229.16 -28.51Q225.88 -29.45 222 -30.08Q217.94 -30.74 213.8 -31.68Q209.65 -32.62 206.17 -34.63Q202.7 -36.65 200.58 -40.42Q198.47 -44.19 198.47 -50.49V-50.54Q198.47 -60.64 205.16 -66.19Q211.85 -71.73 224.05 -71.73Q229.79 -71.73 235.45 -69.86Q241.12 -67.99 246.27 -64.31L240.61 -55.03Q236.54 -58 232.33 -59.49Q228.13 -60.99 224.05 -60.99Q217.23 -60.99 213.46 -58.43Q209.7 -55.88 209.7 -51.22V-51.17Q209.7 -47.4 211.91 -45.44Q214.11 -43.48 217.67 -42.53Q221.23 -41.59 225.32 -40.77Q229.31 -39.99 233.27 -38.87Q237.24 -37.75 240.5 -35.65Q243.77 -33.54 245.73 -29.87Q247.69 -26.2 247.69 -20.31V-20.21Q247.69 -10.22 240.75 -4.75Q233.82 0.73 221.22 0.73Z M277.08 0V-65.19H288.4V0ZM257.3 -60.16V-71H308.18V-60.16Z M321.21 0V-71H332.54V0ZM326.58 0V-10.84H367.6V0Z M384.54 0V-71H395.86V0ZM389.37 0V-10.84H430.92V0ZM389.37 -29.83V-40.67H425.55V-29.83ZM389.37 -60.16V-71H430.92V-60.16Z"/>
+      </g>
+    </svg>
+    <span>AI 视频工程台</span>
+  </div>
+  <div class="grow"></div>
+  <div class="meta" id="ver"></div>
+  <button class="quit" id="help">怎么用</button>
+  <button class="quit" id="quit">退出</button>
+</header>
+
+<div class="update" id="upd" hidden>
+  <span class="dot"></span>
+  <span>发现新版本 <b id="updVer"></b></span>
+  <span class="note" id="updNote"></span>
+  <span class="grow"></span>
+  <button id="updBtn">立即更新</button>
+  <button class="ghost" id="updLater">以后</button>
+</div>
+
+<main>
+  <section class="recent">
+    <div class="sec-head"><h2>最近的工程</h2><span class="n" id="rn"></span></div>
+    <div class="rows" id="rows"></div>
+    <div class="empty" id="empty" hidden>
+      <div class="onb-intro">
+        <div class="k">第一次用</div>
+        <h3>第一次用 Trestle？</h3>
+        <p>WorkBuddy 写内容 → Trestle 看结构、接 LibTV → LibTV 出片。<br>Trestle 不写剧本，也不出图。</p>
+        <div class="acts">
+          <button class="btn primary" id="btnOnb">3 分钟看懂</button>
+          <button class="btn" id="btnDemo">用 20 秒样片试一下</button>
+        </div>
+        <div class="role-line">
+          <b>WorkBuddy</b><span>写</span><span class="arr">→</span>
+          <b>Trestle</b><span>看 + 接</span><span class="arr">→</span>
+          <b>LibTV</b><span>出片</span>
+          <i>· 生成花的是你的积分</i>
+        </div>
+      </div>
+
+      <div class="two-paths">
+        <button class="path-card" id="pathDemo">
+          <span class="badge">第一次推荐</span>
+          <b>用 20 秒样片试一下</b>
+          <span>已经写好剧本、1 个场、2 段、4 个镜和成片，打开就能看结构和交付包。</span>
+        </button>
+        <button class="path-card" id="pathEmpty">
+          <b>从空白开始</b>
+          <span>先让 WorkBuddy 问你 3 个问题，再写第一版。</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="actions">
+    <h2>开始</h2>
+    <button class="btn primary" id="btnNew">新建项目</button>
+    <button class="btn" id="btnOpen">打开文件夹…</button>
+    <button class="btn" id="btnWB">用 WorkBuddy 打开…</button>
+
+    <div class="sep"></div>
+    <div class="field-label">或直接粘贴路径</div>
+    <div class="pathline">
+      <input id="path" placeholder="D:\片子\我做的那支" spellcheck="false">
+      <button id="btnGo">打开</button>
+    </div>
+
+    <div class="envbox">
+      <div class="env-head"><span>环境</span><span class="grow"></span>
+        <button id="envAgain" type="button">重新检查</button></div>
+      <div class="env-row" id="envAgent"><i></i><span>WorkBuddy / Claude</span><b>检查中</b></div>
+      <div class="env-row" id="envSkill"><i></i><span>导演 skill</span><b>检查中</b></div>
+      <div class="env-row" id="envFfmpeg"><i></i><span>ffmpeg</span><b>检查中</b></div>
+      <div class="env-row" id="envDisk"><i></i><span>磁盘</span><b>检查中</b></div>
+      <div class="env-row" id="envEdge"><i></i><span>Edge</span><b>检查中</b></div>
+    </div>
+
+    <div class="grow"></div>
+    <p class="tip">打开文件夹不会复制、不移动任何文件。用 WorkBuddy 打开时会一并加载导演 skill。关掉窗口，后台服务一起停。</p>
+  </aside>
+</main>
+
+<footer>
+  <span class="pill" id="pWb"><i></i><span>工作台</span></span>
+  <span class="pill" id="pWbApp"><i></i><span>WorkBuddy</span></span>
+  <span class="pill" id="pSkill"><i></i><span>导演 skill</span></span>
+  <div class="grow"></div>
+  <span id="hint"></span>
+</footer>
+
+<div class="veil" id="veil"><div class="box">
+  <div class="spin"></div><p id="veilText">正在打开工程…</p>
+</div></div>
+
+<dialog id="newDlg">
+  <form method="dialog" onsubmit="return false">
+    <div class="dlg-head">
+      <h3>新建项目</h3>
+      <p>会在你选的位置建一个文件夹，里面是剧本、场、分镜、资产这些目录。</p>
+    </div>
+    <div class="dlg-body">
+      <label class="f"><span>工程名</span>
+        <input id="nName" placeholder="例如：咖啡怎么拍才不像投诉照" autocomplete="off">
+      </label>
+      <label class="f"><span>建在</span>
+        <div class="row2">
+          <input id="nParent" spellcheck="false">
+          <button type="button" id="nBrowse">浏览…</button>
+        </div>
+      </label>
+      <div class="tpls" id="nTpls"></div>
+      <label class="chk"><input type="checkbox" id="nGit" checked>同时建一个 git 仓库（本机有 git 时）</label>
+      <p class="err" id="nErr" hidden></p>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" id="nCancel" type="button">取消</button>
+      <button class="btn primary" id="nCreate" type="button">创建</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="errDlg">
+  <div class="dlg-head">
+    <h3 id="eTitle">打不开这个文件夹</h3>
+    <p id="eText"></p>
+  </div>
+  <div class="dlg-body">
+    <p class="err soft" id="ePath" style="font-family:var(--mono);word-break:break-all"></p>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn" id="eAlt">换个文件夹</button>
+    <button class="btn primary" id="eOk">知道了</button>
+  </div>
+</dialog>
+
+<dialog id="onbDlg" class="onb-dlg">
+  <div class="dlg-head">
+    <h3>3 分钟看懂 Trestle</h3>
+    <p>先认人，再认路。记不住按钮没关系。</p>
+  </div>
+  <div class="dlg-body">
+    <div class="onb-cols">
+      <div class="onb-col">
+        <h4>写</h4><div class="who">WORKBUDDY</div>
+        <ul>
+          <li>问你 3 个会改变结构的问题</li>
+          <li>写创意、剧本、场、分镜、镜头</li>
+          <li>写图谱、提示词</li>
+        </ul>
+      </div>
+      <div class="onb-col">
+        <h4>看 + 接</h4><div class="who">Trestle</div>
+        <ul>
+          <li>只读工程文件</li>
+          <li>把节点接到 LibTV 画布</li>
+          <li>把结果收回来、审片、交付</li>
+        </ul>
+      </div>
+      <div class="onb-col">
+        <h4>出片</h4><div class="who">LIBTV</div>
+        <ul>
+          <li>你在这里点生成</li>
+          <li>花你的积分</li>
+          <li>Trestle 不代生成、不代扣</li>
+        </ul>
+      </div>
+    </div>
+    <div class="onb-chain">
+      <div class="lab">内容 · WORKBUDDY</div>
+      <div class="row"><b>创意</b><em>→</em><b>剧本</b><em>→</em><b>场</b><em>→</em><b>段</b><em>→</em><b>镜</b><em>→</em><b>图谱</b><em>→</em><b>提示词</b></div>
+      <div class="lab" style="margin-top:8px">执行 · Trestle + 你</div>
+      <div class="row"><b>布线</b><em>→</em><b>在 LibTV 生成</b><em>→</em><b>同步</b><em>→</em><b>审片</b><em>→</em><b>交付</b></div>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn" id="onbOk">知道了</button>
+    <button class="btn primary" id="onbDemo">打开小样看看</button>
+  </div>
+</dialog>
+
+<dialog id="envDlg" class="env-dlg">
+  <div class="dlg-head">
+    <h3>开工前，先检查环境</h3>
+    <p>缺项不影响打开工程看结构；出片前需要齐全。</p>
+  </div>
+  <div class="dlg-body">
+    <div class="env-list" id="envList"></div>
+    <p class="err soft" id="envErr" hidden></p>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn" id="envFix" type="button">让 WorkBuddy 帮我修</button>
+    <button class="btn" id="envCopy" type="button">复制诊断</button>
+    <button class="btn" id="envRecheck" type="button">重新检查</button>
+    <button class="btn primary" id="envOk" type="button">开始使用</button>
+  </div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = (document.querySelector('meta[name="cj-token"]') || {}).content || '';
+const state = { recents: [], templates: [], defaultParent: '', running: {} };
+
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CJ-Token': TOKEN },
+    body: JSON.stringify(body || {})
+  });
+  return r.json();
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function envRow(id, ok, text, detail) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.remove('ok', 'warn', 'bad');
+  el.classList.add(ok ? 'ok' : 'bad');
+  const b = el.querySelector('b');
+  b.textContent = text;
+  el.title = detail || text;
+}
+
+function renderEnv(pf) {
+  if (!pf) return;
+  const agent = pf.workbuddy || pf.claude || '';
+  envRow('#envAgent', !!agent,
+    agent ? (pf.workbuddy ? 'WorkBuddy 已装' : 'Claude 已装') : '未安装',
+    agent || '装 WorkBuddy，或只用 Claude Code');
+  envRow('#envSkill', !!pf.skill,
+    pf.skill ? ('内置' + (pf.skill_version ? ' v' + pf.skill_version : '')) : '未找到',
+    pf.skill || '内置导演 skill 缺失，重新安装 Trestle');
+  const ff = (pf.ffmpeg || {});
+  envRow('#envFfmpeg', !!ff.ready,
+    ff.ready ? ((ff.bundled ? '内置 ' : '系统 ') + (ff.version || '可用')) : '未找到',
+    ff.path || '安装包应自带 ffmpeg；开发机放 vendor/ffmpeg');
+  const disk = (pf.disk || {});
+  envRow('#envDisk', disk.ready !== false,
+    disk.free_gb == null ? '读不到' : ('剩 ' + disk.free_gb + ' GB'),
+    '低于 2GB 时建议先清理磁盘');
+  const edge = (pf.edge || {});
+  envRow('#envEdge', edge.ready !== false,
+    edge.ready ? '已找到' : '未找到',
+    edge.path || 'Windows 11 通常自带 Edge');
+}
+
+const ENV_SEEN_KEY = 'cj-env-seen';
+
+function envRowsHtml(pf) {
+  return (pf.rows || []).map(r =>
+    `<div class="env-row ${r.optional ? 'warn' : (r.ready ? 'ok' : 'bad')}">` +
+    `<i></i><span>${esc(r.label)}</span><b>${esc(r.detail || '')}</b></div>`
+  ).join('');
+}
+
+function envCriticalMissing(pf) {
+  return (pf.rows || []).some(r => !r.optional && !r.ready);
+}
+
+function envSeen(version) {
+  try { return localStorage.getItem(ENV_SEEN_KEY) === String(version || ''); }
+  catch (e) { return false; }
+}
+
+function markEnvSeen(version) {
+  try { localStorage.setItem(ENV_SEEN_KEY, String(version || '')); }
+  catch (e) { /* ignore */ }
+}
+
+function maybeEnvWizard(pf) {
+  if (!pf || envSeen(pf.version)) return;
+  if (!envCriticalMissing(pf)) { markEnvSeen(pf.version); return; }
+  $('#envList').innerHTML = envRowsHtml(pf);
+  $('#envErr').hidden = true;
+  const dlg = $('#envDlg');
+  if (dlg && !dlg.open) dlg.showModal();
+}
+
+async function recheckEnv(inDialog) {
+  const out = await api('/api/bootstrap', {});
+  const pf = out.platform || {};
+  renderEnv(pf);
+  if (inDialog) {
+    $('#envList').innerHTML = envRowsHtml(pf);
+    if (!envCriticalMissing(pf)) {
+      markEnvSeen(pf.version);
+      $('#envDlg').close();
+      $('#hint').textContent = '环境已就绪';
+    }
+  }
+  return pf;
+}
+
+function veil(on, text) {
+  $('#veilText').textContent = text || '正在打开工程…';
+  $('#veil').classList.toggle('on', !!on);
+}
+
+/* ---------------- 渲染 ---------------- */
+
+function renderRecents() {
+  const box = $('#rows');
+  const rows = state.recents;
+  $('#rn').textContent = rows.length ? rows.length + ' 个' : '';
+  $('#empty').hidden = rows.length > 0;
+  box.innerHTML = rows.map((r, i) => {
+    const up = Object.prototype.hasOwnProperty.call(state.running, r.path);
+    return `<div class="row${up ? ' up' : ''}" data-i="${i}" tabindex="0">
+      <div class="name"><span class="dot"></span>${esc(r.name)}</div>
+      <div class="stat">${up ? '打开中' : esc(r.at || '')}</div>
+      <div class="path">${esc(r.path)}</div>
+      <div class="acts">
+        <button class="wb" data-wb="${i}" title="用 WorkBuddy 打开，并加载导演 skill">WorkBuddy</button>
+        <button class="more" data-more="${i}" title="更多">⋯</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#rows').addEventListener('click', e => {
+  const wb = e.target.closest('[data-wb]');
+  if (wb) {
+    e.stopPropagation();
+    openWorkbuddy(state.recents[+wb.dataset.wb].path);
+    return;
+  }
+  const more = e.target.closest('[data-more]');
+  if (more) {
+    e.stopPropagation();
+    const r = state.recents[+more.dataset.more];
+    menu(r, e);
+    return;
+  }
+  const row = e.target.closest('.row');
+  if (row) openPath(state.recents[+row.dataset.i].path);
+});
+$('#rows').addEventListener('keydown', e => {
+  const row = e.target.closest('.row');
+  if (row && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault(); openPath(state.recents[+row.dataset.i].path);
+  }
+});
+
+function menu(r, ev) {
+  // 用一个轻量原生菜单：定位到鼠标附近
+  const box = document.createElement('div');
+  box.className = 'ctx';
+  box.innerHTML = `<button data-a="workbuddy">用 WorkBuddy 打开</button>
+                   <button data-a="reveal">在资源管理器里显示</button>
+                   <button data-a="forget">从列表移除</button>`;
+  Object.assign(box.style, {
+    position: 'fixed', zIndex: 60, background: 'var(--raised)',
+    border: '1px solid var(--border)', borderRadius: '6px', padding: '4px',
+    display: 'flex', flexDirection: 'column', minWidth: '168px',
+    boxShadow: '0 12px 32px rgba(0,0,0,.5)'
+  });
+  box.querySelectorAll('button').forEach(b => Object.assign(b.style, {
+    textAlign: 'left', padding: '7px 10px', borderRadius: '4px',
+    fontSize: '12.5px', color: 'var(--muted)'
+  }));
+  box.addEventListener('mouseover', e => {
+    if (e.target.tagName === 'BUTTON') e.target.style.background = '#24242a';
+  });
+  box.addEventListener('mouseout', e => {
+    if (e.target.tagName === 'BUTTON') e.target.style.background = '';
+  });
+  const evt = ev || window.event;
+  box.style.left = Math.min((evt ? evt.clientX : 40), window.innerWidth - 200) + 'px';
+  box.style.top = Math.min((evt ? evt.clientY : 40), window.innerHeight - 140) + 'px';
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  setTimeout(() => document.addEventListener('click', close, { once: true }), 0);
+  box.addEventListener('click', async e => {
+    const a = e.target.closest('[data-a]');
+    if (!a) return;
+    if (a.dataset.a === 'workbuddy') await openWorkbuddy(r.path);
+    if (a.dataset.a === 'reveal') await api('/api/reveal', { path: r.path });
+    if (a.dataset.a === 'forget') {
+      const out = await api('/api/forget', { path: r.path });
+      state.recents = out.recents || [];
+      renderRecents();
+    }
+    close();
+  });
+}
+
+/* ---------------- 动作 ---------------- */
+
+async function openPath(path) {
+  if (!path) return;
+  veil(true, '正在打开工程…');
+  try {
+    const out = await api('/api/open', { path });
+    if (out.ok) { location.href = out.url; return; }
+    veil(false);
+    showProblem(out.project);
+  } catch (e) {
+    veil(false);
+    showProblem({ kind: 'error', path, error: String(e) });
+  }
+}
+
+async function openWorkbuddy(path) {
+  if (!path) return;
+  veil(true, '正在唤起 WorkBuddy…');
+  try {
+    const out = await api('/api/workbuddy', { path });
+    veil(false);
+    if (out.ok) {
+      const row = state.recents.find(r => r.path === out.path);
+      const name = (out.project && out.project.name) || (row && row.name) || '';
+      $('#hint').textContent = name
+        ? ('已在 WorkBuddy 打开「' + name + '」，导演 skill 已加载')
+        : '已在 WorkBuddy 打开，导演 skill 已加载';
+      return;
+    }
+    if (out.code === 'needs_install') {
+      return showProblem({ kind: 'needs_workbuddy', path: out.path || path });
+    }
+    if (out.code === 'no_skill') {
+      return showProblem({ kind: 'no_skill', path: out.path || path });
+    }
+    if (out.code === 'spawn_failed') {
+      return showProblem({ kind: 'error', path: out.path || path,
+                           error: out.error });
+    }
+    showProblem(out.project || { kind: 'error', path, error: out.error });
+  } catch (e) {
+    veil(false);
+    showProblem({ kind: 'error', path, error: String(e) });
+  }
+}
+
+async function browseForWorkbuddy() {
+  veil(true, '正在等系统选择文件夹…');
+  try {
+    const out = await api('/api/browse', {
+      title: '选择要用 WorkBuddy 打开的工程', inspecting: true,
+      initial: state.defaultParent
+    });
+    veil(false);
+    if (!out.ok) return;
+    if (out.project && (out.project.kind === 'ok' ||
+                        out.project.kind === 'no_unit')) {
+      return openWorkbuddy(out.project.path);
+    }
+    showProblem(out.project || { kind: 'error', path: out.path });
+  } catch (e) {
+    veil(false);
+    showProblem({ kind: 'error', error: String(e) });
+  }
+}
+
+function showProblem(p) {
+  p = p || {};
+  const t = $('#eTitle'), x = $('#eText'), y = $('#ePath'), alt = $('#eAlt');
+  alt.hidden = false;
+  y.textContent = p.path || '';
+  if (p.kind === 'needs_workbuddy') {
+    t.textContent = '没找到 WorkBuddy';
+    x.textContent = '先安装 WorkBuddy 客户端；装好后再打开 Trestle。装在别处可以设环境变量 CJ_WORKBUDDY 指向 WorkBuddy.exe。';
+    alt.hidden = true;
+  } else if (p.kind === 'no_skill') {
+    t.textContent = '找不到导演 skill';
+    x.textContent = '安装包里没有 ai-video-director。重新安装 Trestle 即可；装好后再点一次。';
+    alt.hidden = true;
+  } else if (p.kind === 'not_project') {
+    t.textContent = '这里还不是工程';
+    x.textContent = p.empty
+      ? '文件夹是空的。可以先把它建成工程，或者换一个文件夹。'
+      : '这个文件夹里没有 project.json，还不是 Trestle 工程。';
+  } else if (p.kind === 'no_unit') {
+    t.textContent = '这个工程里还没有一集';
+    x.textContent = '工程骨架在，但 units 是空的。先用命令行补一集，再来打开。';
+  } else if (p.kind === 'broken') {
+    t.textContent = 'project.json 读不出来';
+    x.textContent = p.error || '文件可能被改坏了。';
+  } else if (p.kind === 'missing') {
+    t.textContent = '找不到这个文件夹';
+    x.textContent = '路径不存在，或者没有权限访问。';
+  } else {
+    t.textContent = '打不开';
+    x.textContent = p.error || '未知问题。';
+  }
+  $('#errDlg').showModal();
+}
+
+async function browseForProject() {
+  veil(true, '正在等系统选择文件夹…');
+  try {
+    const out = await api('/api/browse', {
+      title: '选择工程文件夹', inspecting: true,
+      initial: state.defaultParent
+    });
+    veil(false);
+    if (!out.ok) return;
+    if (out.project && out.project.kind === 'ok') return openPath(out.project.path);
+    showProblem(out.project || { kind: 'error', path: out.path });
+  } catch (e) {
+    veil(false);
+    showProblem({ kind: 'error', error: String(e) });
+  }
+}
+
+/* ---------------- 新建 ---------------- */
+
+function renderTemplates(preferId) {
+  const box = $('#nTpls');
+  if (!state.templates.length) {
+    box.innerHTML = '<p class="err">没有可用模板，请重新安装。</p>';
+    return;
+  }
+  const firstTime = state.recents.length === 0;
+  const sampleId = () => state.templates.some(t => t.id === 'esp32-20s')
+    ? 'esp32-20s' : 'demo';
+  // 第一次用：样片排前面；老用户保持后端顺序（空工程优先）。
+  const list = [...state.templates];
+  if (firstTime) {
+    const sid = sampleId();
+    list.sort((a, b) => (a.id === sid ? 0 : 1) - (b.id === sid ? 0 : 1));
+  }
+  const fallback = firstTime && list.some(t => t.id === sampleId())
+    ? sampleId() : (list[0] || {}).id;
+  const chosen = preferId || fallback;
+
+  box.innerHTML = list.map((t) =>
+    `<button type="button" class="tpl${t.id === chosen ? ' on' : ''}" data-t="${esc(t.id)}">
+       ${t.id === sampleId() && firstTime ? '<span class="tpl-badge">第一次推荐</span>' : ''}
+       <b>${esc(t.label)}</b>${t.desc ? `<em>${esc(t.desc)}</em>` : ''}</button>`).join('');
+  box.querySelectorAll('.tpl').forEach(b => b.onclick = () => {
+    box.querySelectorAll('.tpl').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  });
+}
+
+function openNew(preferId) {
+  $('#nName').value = '';
+  $('#nParent').value = state.defaultParent;
+  $('#nErr').hidden = true;
+  renderTemplates(typeof preferId === 'string' ? preferId : '');
+  $('#newDlg').showModal();
+  setTimeout(() => $('#nName').focus(), 30);
+}
+
+async function doCreate() {
+  const name = $('#nName').value.trim();
+  const parent = $('#nParent').value.trim();
+  const tpl = ($('#nTpls .tpl.on') || {}).dataset?.t;
+  const err = $('#nErr');
+  err.hidden = true;
+  if (!name) { err.textContent = '先给工程起个名字。'; err.hidden = false; return; }
+  if (!parent) { err.textContent = '还没选建在哪。'; err.hidden = false; return; }
+  if (!tpl) { err.textContent = '没有可用模板。'; err.hidden = false; return; }
+
+  veil(true, '正在建工程…');
+  try {
+    const out = await api('/api/create', {
+      name, parent, template: tpl, git: $('#nGit').checked
+    });
+    if (out.ok) { location.href = out.url; return; }
+    veil(false);
+    err.textContent = out.error || '建不出来，换个名字或位置试试。';
+    err.hidden = false;
+  } catch (e) {
+    veil(false);
+    err.textContent = String(e);
+    err.hidden = false;
+  }
+}
+
+/* ---------------- 绑定 ---------------- */
+
+$('#btnNew').onclick = () => openNew();
+$('#btnDemo').onclick = () => openNew(state.templates.some(t => t.id === 'esp32-20s')
+  ? 'esp32-20s' : 'demo');
+$('#pathDemo').onclick = () => openNew(state.templates.some(t => t.id === 'esp32-20s')
+  ? 'esp32-20s' : 'demo');
+$('#pathEmpty').onclick = () => openNew('empty');
+$('#help').onclick = () => $('#onbDlg').showModal();
+$('#btnOnb').onclick = () => $('#onbDlg').showModal();
+$('#onbOk').onclick = () => $('#onbDlg').close();
+$('#onbDemo').onclick = () => {
+  $('#onbDlg').close();
+  openNew(state.templates.some(t => t.id === 'esp32-20s') ? 'esp32-20s' : 'demo');
+};
+$('#btnOpen').onclick = browseForProject;
+$('#btnWB').onclick = () => {
+  const typed = $('#path').value.trim();
+  if (typed) return openWorkbuddy(typed);
+  browseForWorkbuddy();
+};
+$('#btnGo').onclick = () => openPath($('#path').value.trim());
+$('#path').addEventListener('keydown', e => {
+  if (e.key === 'Enter') openPath($('#path').value.trim());
+});
+$('#nBrowse').onclick = async () => {
+  veil(true, '正在等系统选择文件夹…');
+  const out = await api('/api/browse', { title: '建在哪', initial: $('#nParent').value });
+  veil(false);
+  if (out.ok) $('#nParent').value = out.path;
+};
+$('#nCancel').onclick = () => $('#newDlg').close();
+$('#nCreate').onclick = doCreate;
+$('#nName').addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+$('#eOk').onclick = () => $('#errDlg').close();
+$('#eAlt').onclick = () => { $('#errDlg').close(); browseForProject(); };
+$('#quit').onclick = async () => {
+  veil(true, '正在退出…');
+  try { await api('/api/quit', {}); } catch (e) { /* 服务先退出也算成功 */ }
+  setTimeout(() => { try { window.close(); } catch (e) { /* 服务端会关窗口 */ } }, 150);
+};
+
+/* ---------------- 更新 ---------------- */
+
+let updPoll = null;
+let updBusy = false;
+let lastUpdate = null;
+const UPD_SKIP_KEY = 'wb-update-skip';
+
+function scheduleUpdate(ms) {
+  if (updPoll) clearTimeout(updPoll);
+  updPoll = setTimeout(pollUpdate, ms);
+}
+
+function showUpdate(u) {
+  const bar = $('#upd');
+  if (!u) { bar.hidden = true; return; }
+  lastUpdate = u;
+  const busy = u.status === 'downloading' || u.status === 'installing';
+  const hot = !!u.can_hot && (u.kind === 'hot' || u.kind === 'hot+full');
+  // 只有确认「真的有新版」才出现；检查中 / 版本相同都不打扰
+  if (!busy && (!u.checked || !u.available)) { bar.hidden = true; return; }
+  if (!busy && u.version && localStorage.getItem(UPD_SKIP_KEY) === u.version) {
+    bar.hidden = true;
+    return;
+  }
+
+  bar.hidden = false;
+  $('#updVer').textContent = 'v' + (u.version || '');
+  $('#updBtn').hidden = busy;
+  $('#updLater').hidden = busy;
+
+  if (u.status === 'installing') {
+    updBusy = true;
+    $('#updNote').textContent = u.needs_admin
+      ? '正在安装；即将弹出管理员授权，请点“是”…'
+      : '正在安装，程序马上重启…';
+    veil(true, u.needs_admin
+      ? '正在安装：请留意管理员授权窗口，点“是”'
+      : '正在安装新版本…');
+    return;
+  }
+  if (u.status === 'downloading') {
+    updBusy = true;
+    const p = u.progress || 0;
+    $('#updNote').textContent = '正在下载 ' + p + '%';
+    veil(true, '正在下载更新 ' + p + '%');
+    return;
+  }
+  if (updBusy) { veil(false); updBusy = false; }
+  if (u.status === 'error') {
+    $('#updNote').textContent = u.error || '更新失败';
+    $('#updBtn').textContent = '重试';
+    return;
+  }
+  $('#updBtn').textContent = hot ? '快速更新' : '立即更新';
+  const note = u.notes || '';
+  $('#updNote').textContent = hot
+    ? ('无需管理员权限 · 完成后自动重启' + (note ? ' · ' + note : ''))
+    : note;
+  $('#updNote').title = u.notes || '';
+  const ist = u.installed_skill || {};
+  if (!busy && ist.needs_sync) {
+    $('#updNote').textContent += ' · 导演 skill 可同步（点底部 skill 徽标）';
+  }
+  // 上次点的更新没走完（窗口关了但安装器没起来 / 安装失败）：
+  // 不能再静默地当作没事发生，这里直接说明原因。
+  const last = u.last_update || {};
+  if (!busy && u.version && last.version === u.version) {
+    if (last.stage === 'failed') {
+      $('#updNote').textContent = '上次更新没有完成'
+        + (last.error ? '：' + last.error : '') + '，请重试。';
+    } else if (last.stage === 'installing' || last.stage === 'starting') {
+      $('#updNote').textContent = '上次更新在安装前中断了，请重试；'
+        + '仍不行就手动运行安装包。';
+    }
+  }
+}
+
+async function pollUpdate() {
+  let u;
+  try {
+    const r = await fetch('/api/update');
+    u = await r.json();
+  } catch (e) {
+    return;                       // 安装时服务会先退出，保持遮罩
+  }
+  showUpdate(u);
+  if (u.status === 'downloading' || u.status === 'installing') scheduleUpdate(700);
+  else if (!u.checked && u.enabled) scheduleUpdate(1000);
+}
+
+$('#updBtn').onclick = async () => {
+  if (lastUpdate && !lastUpdate.can_hot) {
+    const ok = confirm('这次更新需要管理员授权。\n\n' +
+      '接下来会关闭窗口并弹出 UAC，请点“是”。\n' +
+      '如果取消，Trestle 会重新打开旧版。继续吗？');
+    if (!ok) return;
+  }
+  $('#updBtn').hidden = true;
+  try {
+    const out = await api('/api/update/apply', {});
+    if (!out.ok) {
+      $('#updNote').textContent = out.error || '更新失败';
+      $('#updBtn').hidden = false;
+      return;
+    }
+  } catch (e) {
+    $('#updNote').textContent = '连接中断';
+    $('#updBtn').hidden = false;
+    return;
+  }
+  scheduleUpdate(400);
+};
+
+$('#updLater').onclick = () => {
+  // 「以后」记到本机：同一版本不再提示，出了更新版再说
+  try {
+    if (lastUpdate && lastUpdate.version) {
+      localStorage.setItem(UPD_SKIP_KEY, lastUpdate.version);
+    }
+  } catch (e) { /* 存不下就只关这一次 */ }
+  $('#upd').hidden = true;
+};
+
+/* ---------------- 启动 ---------------- */
+
+$('#envAgain').onclick = async () => {
+  $('#hint').textContent = '正在检查环境…';
+  try {
+    await recheckEnv(false);
+    $('#hint').textContent = '环境检查已更新';
+  } catch (e) {
+    $('#hint').textContent = '检查失败：' + String(e);
+  }
+};
+
+$('#envOk').onclick = () => {
+  markEnvSeen(state.envVersion);
+  $('#envDlg').close();
+};
+
+$('#envRecheck').onclick = async () => {
+  $('#envErr').hidden = true;
+  try {
+    const pf = await recheckEnv(true);
+    state.envVersion = pf.version;
+    $('#hint').textContent = envCriticalMissing(pf) ? '还有缺项，按提示处理' : '环境已就绪';
+  } catch (e) {
+    $('#envErr').hidden = false;
+    $('#envErr').textContent = '检查失败：' + String(e);
+  }
+};
+
+async function copyDiag() {
+  const out = await api('/api/diag', {});
+  const text = out.text || '读不到诊断信息';
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { /* 没剪贴板就当提示 */ }
+  $('#hint').textContent = '诊断信息已复制，发给朋友群/反馈表即可';
+}
+
+$('#envCopy').onclick = async () => {
+  try { await copyDiag(); }
+  catch (e) { $('#hint').textContent = '复制失败：' + String(e); }
+};
+
+$('#envFix').onclick = async () => {
+  $('#envErr').hidden = true;
+  try {
+    const r = await api('/api/env-fix', {});
+    if (r.ok) {
+      $('#hint').textContent = '已在 WorkBuddy 打开环境修复任务';
+      $('#envDlg').close();
+      return;
+    }
+    try { await navigator.clipboard.writeText(r.prompt || r.report || ''); }
+    catch (e) { /* ignore */ }
+    $('#envErr').hidden = false;
+    $('#envErr').textContent = '没找到 WorkBuddy；诊断和修复说明已复制，可以粘贴给任意 AI。';
+  } catch (e) {
+    $('#envErr').hidden = false;
+    $('#envErr').textContent = '打开失败：' + String(e);
+  }
+};
+
+(async function boot() {
+  try {
+    const out = await api('/api/bootstrap', {});
+    state.recents = out.recents || [];
+    state.templates = out.templates || [];
+    state.defaultParent = out.defaultParent || '';
+    state.running = out.running || {};
+    if (out.app) {
+      $('#ver').textContent = 'v' + out.app.version;
+      document.title = out.app.name;
+    }
+    renderRecents();
+    const pf = out.platform || {};
+    state.envVersion = pf.version || (out.app && out.app.version) || '';
+    renderEnv(pf);
+    maybeEnvWizard(pf);
+    $('#pWb').classList.add(pf.workbench ? 'on' : 'off');
+    const wba = $('#pWbApp');
+    wba.classList.add(pf.workbuddy ? 'on' : 'off');
+    wba.title = pf.workbuddy || '没找到 WorkBuddy 客户端';
+    const sk = $('#pSkill');
+    const sv = pf.skill_version || '';
+    const iv = pf.skill_installed || '';
+    const need = !!pf.skill_needs_sync;
+    const internal = pf.skill_internal !== false;
+    const shown = need && iv && sv ? (iv + ' → ' + sv) : (iv || sv);
+    sk.classList.add(pf.skill ? 'on' : 'off');
+    if (internal) {
+      sk.title = pf.skill
+        ? ('内置 skill · ' + (shown ? 'v' + shown : '随 Trestle 更新'))
+        : '没找到内置 skill';
+      sk.querySelector('span').textContent = pf.skill
+        ? ('导演 skill' + (shown ? ' ' + shown : '') + ' · 内置')
+        : '导演 skill 未装';
+      sk.style.cursor = 'default';
+      sk.onclick = null;
+    } else {
+      sk.title = need
+        ? ('可同步到 ' + (sv ? 'v' + sv : '新版') + ' · 点这里同步')
+        : (pf.skill || '没找到导演 skill');
+      sk.querySelector('span').textContent = !pf.skill
+        ? '导演 skill 未装'
+        : (need && !iv
+            ? '导演 skill 未装 · 可同步'
+            : ('导演 skill' + (shown ? ' ' + shown : '') +
+               (need ? ' · 可同步' : '')));
+      sk.style.cursor = 'pointer';
+      sk.onclick = async () => {
+        sk.querySelector('span').textContent = '正在同步导演 skill…';
+        try {
+          const out = await api('/api/skill/sync', { force: true });
+          const st = out.status || {};
+          const v = st.version || '';
+          sk.querySelector('span').textContent = '导演 skill' + (v ? ' v' + v : '');
+          $('#hint').textContent = out.ok
+            ? ('导演 skill 已同步' + (v ? ' v' + v : '') +
+               '；重启 Claude / WorkBuddy 后生效')
+            : ('同步失败：' + (out.error || '文件被占用，下次启动会再试'));
+        } catch (e) {
+          $('#hint').textContent = '同步失败：' + String(e);
+        }
+      };
+    }
+    $('#hint').textContent = '工程只读写你自己的文件夹';
+    if (location.hash === '#new') openNew();
+    pollUpdate();
+  } catch (e) {
+    $('#hint').textContent = '连不上本地服务';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# 只忽略「可再生成的」与「过程垃圾」；资产与工程文件一律入库
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+.DS_Store
+Thumbs.db
+*.tmp
+.taste-skill/
+*.log
+*-导出-临时.mp4
+
+# 密钥与本地配置（需要入库的样例用 .env.example）
+.env
+.env.*
+!.env.example
+
+# 生成包与节点回写可以随时重算，不进仓库（随分镜变动）
+units/*/pack.json
+
+# 预览是派生物，随时可重生成（只忽略根目录与单元级预览，不碰 deliver/preview）
+/preview/
+units/*/preview/
+
+# 工作台运行态（PID / 端口 / token）、写前备份与改稿历史
+.workbuddy/tmp/
+.workbuddy/backup/
+.workbuddy/history/
+.workbuddy/trash/
+
+# 大文件不要直接入库：用 Git LFS，或按明确路径逐条排除
+# （.gitignore 不能按文件大小匹配；aiv new / aiv stamp 会自动拒绝 >50MB 的提交）

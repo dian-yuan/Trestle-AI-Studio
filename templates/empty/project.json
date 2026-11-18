@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "空工程",
+    "season": "1",
+    "active_unit": "S1-E01",
+    "created": "2026-11-02",
+    "updated": "2026-11-02",
+    "schema": 3,
+    "app": "changji"
+  },
+  "units": {
+    "S1-E01": {
+      "type": "讲解",
+      "stations": {},
+      "next_action": ""
+    }
+  },
+  "shared": {},
+  "adapters": {
+    "libtv": {
+      "id": "libtv",
+      "kind": "canvas",
+      "status": "预留",
+      "endpoint": "",
+      "web_base": "https://www.liblib.tv",
+      "project_url": "https://www.liblib.tv/canvas?sourceProjectUuid={project_id}",
+      "node_url": "",
+      "consumes": "units/<unit>/pack.json",
+      "produces": "units/<unit>/renders/",
+      "note": "节点级编排：建节点 / 连线 / 分组，一章一个画布。锚点图取自 assets/*/refs",
+      "video_model": "star-video2.5-draft",
+      "video_resolution": "480p",
+      "video_ratio": "16:9",
+      "video_sound": "off"
+    },
+    "tapnow": {
+      "id": "tapnow",
+      "kind": "image",
+      "status": "预留",
+      "endpoint": "",
+      "consumes": "units/<unit>/pack.json",
+      "produces": "assets/*/refs/",
+      "note": "出图与定妆：角色定妆图 / 场景母图，产物回写 manifest.files"
+    },
+    "tts": {
+      "id": "tts",
+      "kind": "audio",
+      "status": "预留",
+      "endpoint": "",
+      "consumes": "units/<unit>/pack.json",
+      "produces": "assets/characters/*/voice/",
+      "note": "音色合成：音色挂在角色上，不挂镜头"
+    }
+  },
+  "frozen": []
+}

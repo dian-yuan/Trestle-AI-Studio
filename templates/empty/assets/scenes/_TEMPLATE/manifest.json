@@ -1,0 +1,15 @@
+{
+  "id": "SC-XX-01",
+  "name": "（场景名）",
+  "type": "scenes",
+  "kind": "室内",
+  "status": "草稿",
+  "space": "space.json",
+  "materials": {"wall": "（主墙材质与颜色）", "floor": "（地面）", "ceiling": "（顶面）"},
+  "style": "（风格语言，例：暖调复古 / 低饱和 / 有生活痕迹）",
+  "time_of_day": "（时间设定，例：日落前一小时）",
+  "depth_rule": "（人物与背景的距离与虚化要求）",
+  "files": {},
+  "used_by": [],
+  "notes": ""
+}
